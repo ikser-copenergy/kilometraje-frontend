@@ -8,6 +8,11 @@ import type { Kilometraje } from '../types/Kilometraje';
 // Definimos un tipo con todo menos el ID, que es autogenerado
 type KilometrajeFormData = Omit<Kilometraje, 'id'>;
 
+type AlertState = {
+  message: string;
+  severity: 'success' | 'error';
+};
+
 export const KilometrajeForm = () => {
   const [form, setForm] = useState<KilometrajeFormData>({
     kilometraje_inicio: 0,
@@ -18,87 +23,144 @@ export const KilometrajeForm = () => {
     motivo_uso: '',
   });
 
-  const [alert, setAlert] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof KilometrajeFormData, string>>>({});
+  const [alertState, setAlertState] = useState<AlertState | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({
-      ...prev,
-      [name]: name.includes('kilometraje') ? Number(value) : value
-    }));
+    if (name === 'kilometraje_inicio' || name === 'kilometraje_fin') {
+      const onlyDigits = value.replace(/\D/g, '');
+      const cleaned = onlyDigits.replace(/^0+(?=\d)/, '');
+      const intVal = cleaned === '' ? 0 : parseInt(cleaned, 10);
+      setForm(prev => ({ ...prev, [name]: intVal }));
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    } else {
+      setForm(prev => ({ ...prev, [name]: value }));
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+    setAlertState(null);
+  };
+
+  const validate = () => {
+    const newErrors: typeof errors = {};
+    (Object.keys(form) as (keyof KilometrajeFormData)[]).forEach(key => {
+      const val = form[key];
+      if (
+        val === '' ||
+        val == null ||
+        (typeof val === 'number' && isNaN(val)) ||
+        (key !== 'fecha' && val === 0)
+      ) {
+        newErrors[key] = 'Campo obligatorio';
+      }
+    });
+    if (!newErrors.kilometraje_inicio && !newErrors.kilometraje_fin) {
+      const { kilometraje_inicio, kilometraje_fin } = form;
+      if (kilometraje_fin <= kilometraje_inicio) {
+        newErrors.kilometraje_fin = 'El kilometraje final debe ser mayor que el inicial';
+      }
+    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setAlertState({ message: 'No deben haber campos vacíos.', severity: 'error' });
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
-    const { kilometraje_inicio, kilometraje_fin } = form;
-    const diferencia = kilometraje_fin - kilometraje_inicio;
+    if (!validate()) return;
 
-    if (kilometraje_fin <= kilometraje_inicio) {
-      setAlert('El kilometraje final debe ser mayor que el inicial');
-      return;
-    }
-
+    const diferencia = form.kilometraje_fin - form.kilometraje_inicio;
     if (diferencia > 100) {
       const confirmacion = await Swal.fire({
-        title: 'Kilometraje sospechoso',
+        title: 'Kilometraje alto',
         text: `La diferencia es ${diferencia} km. ¿Deseas continuar?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Sí, guardar',
         cancelButtonText: 'No'
       });
-
       if (!confirmacion.isConfirmed) return;
     }
 
     try {
       const res = await create(form);
       if (res.data.success) {
-        setAlert('Registro guardado correctamente');
+        setAlertState({ message: 'Registro guardado correctamente', severity: 'success' });
+        setForm({
+          kilometraje_inicio: 0,
+          kilometraje_fin: 0,
+          fecha: dayjs().format('YYYY-MM-DDTHH:mm:ss'),
+          nombre_conductor: '',
+          vehiculo: '',
+          motivo_uso: '',
+        });
       } else {
-        setAlert(res.data.message || 'Error desconocido al guardar');
+        setAlertState({ message: res.data.message || 'Error desconocido al guardar', severity: 'error' });
       }
     } catch (err: any) {
       console.error(err?.response?.data);
-      setAlert('Error al guardar el registro');
+      setAlertState({ message: err?.response?.data?.message || 'Error al guardar el registro', severity: 'error' });
     }
   };
 
   return (
     <Stack spacing={2} sx={{ maxWidth: 500 }}>
-      {alert && <Alert severity="info">{alert}</Alert>}
+      {alertState && <Alert severity={alertState.severity}>{alertState.message}</Alert>}
       <TextField
         label="Kilometraje Inicial"
         name="kilometraje_inicio"
         type="number"
-        value={form.kilometraje_inicio}
+        placeholder="0"
+        value={form.kilometraje_inicio === 0 ? '' : form.kilometraje_inicio}
         onChange={handleChange}
+        error={Boolean(errors.kilometraje_inicio)}
+        helperText={errors.kilometraje_inicio}
+        inputProps={{ inputMode: 'numeric', pattern: '\\d*', step: 1 }}
       />
       <TextField
         label="Kilometraje Final"
         name="kilometraje_fin"
         type="number"
-        value={form.kilometraje_fin}
+        placeholder="0"
+        value={form.kilometraje_fin === 0 ? '' : form.kilometraje_fin}
         onChange={handleChange}
+        error={Boolean(errors.kilometraje_fin)}
+        helperText={errors.kilometraje_fin}
+        inputProps={{ inputMode: 'numeric', pattern: '\\d*', step: 1 }}
       />
       <TextField
         label="Nombre del Conductor"
         name="nombre_conductor"
         value={form.nombre_conductor}
         onChange={handleChange}
+        error={Boolean(errors.nombre_conductor)}
+        helperText={errors.nombre_conductor}
       />
       <TextField
         label="Vehículo"
         name="vehiculo"
         value={form.vehiculo}
         onChange={handleChange}
+        error={Boolean(errors.vehiculo)}
+        helperText={errors.vehiculo}
       />
       <TextField
         label="Motivo de Uso"
         name="motivo_uso"
         value={form.motivo_uso}
         onChange={handleChange}
+        error={Boolean(errors.motivo_uso)}
+        helperText={errors.motivo_uso}
       />
-      <Button variant="contained" onClick={handleSubmit}>Guardar</Button>
+      <Button
+        variant="contained"
+        size="large"
+        onClick={handleSubmit}
+      >
+        Guardar
+      </Button>
     </Stack>
   );
 };

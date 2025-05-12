@@ -60,7 +60,7 @@ export function NavigationMenu() {
             <Button color="inherit" component={Link} to="/">
               Registrar kilometraje
             </Button>
-            <Button color="inherit" component={Link} to="/kilometraje">
+            <Button color="inherit" component={Link} to="/kilometrajes">
               Registros
             </Button>
           </>

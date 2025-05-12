@@ -1,5 +1,4 @@
-// src/components/KilometrajeTable.tsx
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Kilometraje } from '../types/Kilometraje';
 import { getAll } from '../services/KilometrajeService';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -16,7 +15,9 @@ import {
   Alert,
   Stack,
   TextField,
-  Button 
+  Button,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import dayjs from 'dayjs';
 import { exportToExcel } from '../services/PdfService';
@@ -29,9 +30,12 @@ export const KilometrajeTable = () => {
   const [fechaInicio, setFechaInicio] = useState(dayjs().format('YYYY-MM-DD'));
   const [fechaFin, setFechaFin] = useState(dayjs().format('YYYY-MM-DD'));
 
+  const theme = useTheme();
+  // detecta tamaño xs (<=600px)
+  const isXs = useMediaQuery(theme.breakpoints.only('xs'));
+
   const fetchData = (inicio: string, fin: string) => {
     if (dayjs(fin).isBefore(dayjs(inicio))) return;
-
     setLoading(true);
     setError(null);
     getAll(inicio, fin)
@@ -42,14 +46,16 @@ export const KilometrajeTable = () => {
           throw new Error('Estructura de respuesta inesperada');
         }
       })
-      .catch(() => {
-        setError('No se pudieron cargar los datos');
-      })
+      .catch(() => setError('No se pudieron cargar los datos'))
       .finally(() => setLoading(false));
   };
 
   const handleDownload = () => {
-    if (fechaInicio && fechaFin && !dayjs(fechaFin).isBefore(dayjs(fechaInicio))) {
+    if (
+      fechaInicio &&
+      fechaFin &&
+      !dayjs(fechaFin).isBefore(dayjs(fechaInicio))
+    ) {
       exportToExcel(fechaInicio, fechaFin);
     }
   };
@@ -59,45 +65,72 @@ export const KilometrajeTable = () => {
   }, []);
 
   useEffect(() => {
-    if (fechaInicio && fechaFin && !dayjs(fechaFin).isBefore(dayjs(fechaInicio))) {
+    if (
+      fechaInicio &&
+      fechaFin &&
+      !dayjs(fechaFin).isBefore(dayjs(fechaInicio))
+    ) {
       fetchData(fechaInicio, fechaFin);
     }
   }, [fechaInicio, fechaFin]);
 
   return (
     <Paper sx={{ padding: 2 }}>
-      <Typography variant="h6" gutterBottom>Lista de Registros</Typography>
+      <Typography variant="h6" gutterBottom>
+        Lista de Registros
+      </Typography>
 
+      {/* Stack siempre en row para mantener TextFields lado a lado */}
       <Stack direction="row" spacing={2} mb={2} alignItems="center">
-    <TextField
-      size="small"
-      margin="dense"              // <-- reduce altura
-      label="Fecha Inicio"
-      type="date"
-      value={fechaInicio}
-      onChange={e => setFechaInicio(e.target.value)}
-      InputLabelProps={{ shrink: true }}
-    />
-    <TextField
-      size="small"
-      margin="dense"              // <-- reduce altura
-      label="Fecha Fin"
-      type="date"
-      value={fechaFin}
-      onChange={e => setFechaFin(e.target.value)}
-      InputLabelProps={{ shrink: true }}
-    />
+        <TextField
+          size="small"
+          margin="dense"
+          label="Fecha Inicio"
+          type="date"
+          value={fechaInicio}
+          onChange={e => setFechaInicio(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          size="small"
+          margin="dense"
+          label="Fecha Fin"
+          type="date"
+          value={fechaFin}
+          onChange={e => setFechaFin(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
 
-    <Button
-      variant="outlined"
-      color="success"
-      size="large"
-      onClick={handleDownload}
-      startIcon={<DownloadIcon/>}
-    />
-  </Stack>
+        {/* Botón en línea sólo en pantallas > xs */}
+        {!isXs && (
+          <Button
+            variant="outlined"
+            color="success"
+            size="medium"           // tamaño medio para igualar altura
+            onClick={handleDownload}
+            startIcon={<DownloadIcon />}
+            sx={{ height: '40px' }}  // altura fija
+          >
+            Descargar Excel
+          </Button>
+        )}
+      </Stack>
 
-
+      {/* Botón separado sólo en xs */}
+      {isXs && (
+        <Stack mb={2} alignItems="flex-start">
+          <Button
+            variant="outlined"
+            color="success"
+            size="medium"
+            onClick={handleDownload}
+            startIcon={<DownloadIcon />}
+            sx={{ height: '40px' }}
+          >
+            Descargar Excel
+          </Button>
+        </Stack>
+      )}
 
       {loading ? (
         <CircularProgress />
@@ -122,8 +155,12 @@ export const KilometrajeTable = () => {
                 <TableRow key={row.id}>
                   <TableCell>{row.kilometraje_inicio}</TableCell>
                   <TableCell>{row.kilometraje_fin}</TableCell>
-                  <TableCell>{row.kilometraje_fin - row.kilometraje_inicio}</TableCell>
-                  <TableCell>{new Date(row.fecha).toLocaleString()}</TableCell>
+                  <TableCell>
+                    {row.kilometraje_fin - row.kilometraje_inicio}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(row.fecha).toLocaleString()}
+                  </TableCell>
                   <TableCell>{row.nombre_conductor}</TableCell>
                   <TableCell>{row.vehiculo}</TableCell>
                   <TableCell>{row.motivo_uso}</TableCell>
