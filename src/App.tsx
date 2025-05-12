@@ -10,8 +10,8 @@ function App() {
       <NavigationMenu />
       <Container sx={{ marginTop: 4 }}>
         <Routes>
-          <Route path="/" element={<KilometrajeTable />} />
-          <Route path="/kilometraje" element={<KilometrajePage />} />
+          <Route path="/kilometrajes" element={<KilometrajeTable />} />
+          <Route path="/" element={<KilometrajePage />} />
         </Routes>
       </Container>
     </Router>

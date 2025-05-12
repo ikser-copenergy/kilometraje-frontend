@@ -1,7 +1,8 @@
 // src/components/KilometrajeTable.tsx
 import { useEffect, useState } from 'react';
 import type { Kilometraje } from '../types/Kilometraje';
-import { getAll } from '../services/kilometrajeService';
+import { getAll } from '../services/KilometrajeService';
+import DownloadIcon from '@mui/icons-material/Download';
 import {
   Table,
   TableBody,
@@ -15,8 +16,10 @@ import {
   Alert,
   Stack,
   TextField,
+  Button 
 } from '@mui/material';
 import dayjs from 'dayjs';
+import { exportToExcel } from '../services/PdfService';
 
 export const KilometrajeTable = () => {
   const [data, setData] = useState<Kilometraje[]>([]);
@@ -45,6 +48,12 @@ export const KilometrajeTable = () => {
       .finally(() => setLoading(false));
   };
 
+  const handleDownload = () => {
+    if (fechaInicio && fechaFin && !dayjs(fechaFin).isBefore(dayjs(fechaInicio))) {
+      exportToExcel(fechaInicio, fechaFin);
+    }
+  };
+
   useEffect(() => {
     fetchData(fechaInicio, fechaFin);
   }, []);
@@ -59,22 +68,36 @@ export const KilometrajeTable = () => {
     <Paper sx={{ padding: 2 }}>
       <Typography variant="h6" gutterBottom>Lista de Registros</Typography>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Fecha Inicio"
-          type="date"
-          value={fechaInicio}
-          onChange={(e) => setFechaInicio(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
-        <TextField
-          label="Fecha Fin"
-          type="date"
-          value={fechaFin}
-          onChange={(e) => setFechaFin(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-        />
-      </Stack>
+      <Stack direction="row" spacing={2} mb={2} alignItems="center">
+    <TextField
+      size="small"
+      margin="dense"              // <-- reduce altura
+      label="Fecha Inicio"
+      type="date"
+      value={fechaInicio}
+      onChange={e => setFechaInicio(e.target.value)}
+      InputLabelProps={{ shrink: true }}
+    />
+    <TextField
+      size="small"
+      margin="dense"              // <-- reduce altura
+      label="Fecha Fin"
+      type="date"
+      value={fechaFin}
+      onChange={e => setFechaFin(e.target.value)}
+      InputLabelProps={{ shrink: true }}
+    />
+
+    <Button
+      variant="outlined"
+      color="success"
+      size="large"
+      onClick={handleDownload}
+      startIcon={<DownloadIcon/>}
+    />
+  </Stack>
+
+
 
       {loading ? (
         <CircularProgress />

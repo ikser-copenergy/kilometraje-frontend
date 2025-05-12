@@ -14,3 +14,4 @@ export const getById = (id: number) => axios.get<ApiResponse<Kilometraje>>(`${AP
 export const create = (data: Omit<Kilometraje, 'id'>) => axios.post(API, data);
 export const update = (id: number, data: Omit<Kilometraje, 'id'>) => axios.put(`${API}/${id}`, data);
 export const remove = (id: number) => axios.delete(`${API}/${id}`);
+

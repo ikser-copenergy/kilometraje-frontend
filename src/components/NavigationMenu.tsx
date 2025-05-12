@@ -48,20 +48,20 @@ export function NavigationMenu() {
               onClose={handleMenuClose}
             >
               <MenuItem component={Link} to="/" onClick={handleMenuClose}>
-                Inicio
+                Registrar kilometraje
               </MenuItem>
-              <MenuItem component={Link} to="/kilometraje" onClick={handleMenuClose}>
-                Kilometraje
+              <MenuItem component={Link} to="/kilometrajes" onClick={handleMenuClose}>
+                Registros
               </MenuItem>
             </Menu>
           </>
         ) : (
           <>
             <Button color="inherit" component={Link} to="/">
-              Inicio
+              Registrar kilometraje
             </Button>
             <Button color="inherit" component={Link} to="/kilometraje">
-              Kilometraje
+              Registros
             </Button>
           </>
         )}
