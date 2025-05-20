@@ -21,6 +21,7 @@ export const KilometrajeForm = () => {
     nombre_conductor: '',
     vehiculo: '',
     motivo_uso: '',
+    id_vehiculo:0
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof KilometrajeFormData, string>>>({});
@@ -41,13 +42,12 @@ export const KilometrajeForm = () => {
     setAlertState(null);
   };
 
-  const validate = () => {
+  const validate = (): boolean => {
     const newErrors: typeof errors = {};
     (Object.keys(form) as (keyof KilometrajeFormData)[]).forEach(key => {
       const val = form[key];
       if (
-        val === '' ||
-        val == null ||
+        val === '' || val == null ||
         (typeof val === 'number' && isNaN(val)) ||
         (key !== 'fecha' && val === 0)
       ) {
@@ -95,13 +95,15 @@ export const KilometrajeForm = () => {
           nombre_conductor: '',
           vehiculo: '',
           motivo_uso: '',
+          id_vehiculo: 0
         });
       } else {
         setAlertState({ message: res.data.message || 'Error desconocido al guardar', severity: 'error' });
       }
-    } catch (err: any) {
-      console.error(err?.response?.data);
-      setAlertState({ message: err?.response?.data?.message || 'Error al guardar el registro', severity: 'error' });
+    } catch (err: unknown) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : String(err);
+      setAlertState({ message: message || 'Error al guardar el registro', severity: 'error' });
     }
   };
 
@@ -129,6 +131,16 @@ export const KilometrajeForm = () => {
         error={Boolean(errors.kilometraje_fin)}
         helperText={errors.kilometraje_fin}
         inputProps={{ inputMode: 'numeric', pattern: '\\d*', step: 1 }}
+      />
+      <TextField
+        label="Fecha y hora"
+        name="fecha"
+        type="datetime-local"
+        value={form.fecha}
+        onChange={handleChange}
+        InputLabelProps={{ shrink: true }}
+        error={Boolean(errors.fecha)}
+        helperText={errors.fecha}
       />
       <TextField
         label="Nombre del Conductor"
