@@ -53,6 +53,9 @@ export function NavigationMenu() {
               <MenuItem component={Link} to="/kilometrajes" onClick={handleMenuClose}>
                 Registros
               </MenuItem>
+              <MenuItem component={Link} to="/vehiculos" onClick={handleMenuClose}>
+                Vehiculos
+              </MenuItem>
             </Menu>
           </>
         ) : (
@@ -62,6 +65,9 @@ export function NavigationMenu() {
             </Button>
             <Button color="inherit" component={Link} to="/kilometrajes">
               Registros
+            </Button>
+            <Button color="inherit" component={Link} to="/vehiculos">
+              Vehiculos
             </Button>
           </>
         )}

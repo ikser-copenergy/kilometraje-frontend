@@ -6,4 +6,5 @@ export interface Kilometraje {
     nombre_conductor: string;
     vehiculo: string;
     motivo_uso: string;
+    id_vehiculo: number;
   }
