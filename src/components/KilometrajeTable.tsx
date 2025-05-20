@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Kilometraje } from '../types/Kilometraje';
 import { getAll } from '../services/KilometrajeService';
 import DownloadIcon from '@mui/icons-material/Download';

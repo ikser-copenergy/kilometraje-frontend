@@ -16,7 +16,7 @@ export const exportToExcel = async (fechaInicio: string, fechaFin: string) => {
     // Cargar logo desde carpeta public
     const logoResponse = await fetch('/arrayan-logo.jpg');
     const logoBuffer = await logoResponse.arrayBuffer();
-    const imageId = workbook.addImage({ buffer: logoBuffer, extension: 'jpg' });
+    const imageId = workbook.addImage({ buffer: logoBuffer, extension: 'jpeg' });
 
     // 1. Título "CONTROL DE KILOMETRAJES" fusionado A1:H3
     worksheet.mergeCells('A1:H3');
