@@ -29,6 +29,14 @@ export const KilometrajeForm = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof KilometrajeFormData, string>>>({});
   const [alertState, setAlertState] = useState<AlertState | null>(null);
 
+  // Auto-dismiss success alerts after 3 seconds
+  useEffect(() => {
+    if (alertState?.severity === 'success') {
+      const timer = setTimeout(() => setAlertState(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [alertState]);
+
   useEffect(() => {
     getAll()
       .then(res => {
@@ -51,7 +59,7 @@ export const KilometrajeForm = () => {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     } else if (name === 'id_vehiculo') {
       setForm(prev => ({ ...prev, id_vehiculo: parseInt(value, 10) }));
-      setErrors(prev => ({ ...prev, id_vehiculo: undefined }));
+      setErrors(prev => ({ ...prev, [name]: undefined }));
     } else {
       setForm(prev => ({ ...prev, [name]: value }));
       setErrors(prev => ({ ...prev, [name]: undefined }));
@@ -111,7 +119,7 @@ export const KilometrajeForm = () => {
           fecha: dayjs().format('YYYY-MM-DDTHH:mm:ss'),
           nombre_conductor: '',
           motivo_uso: '',
-          id_vehiculo: 0
+          id_vehiculo: 0,
         });
       } else {
         setAlertState({ message: res.data.message || 'Error desconocido al guardar', severity: 'error' });

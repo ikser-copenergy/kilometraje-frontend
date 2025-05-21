@@ -1,11 +1,26 @@
 import { useEffect, useState } from 'react';
 import {
-  Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Alert, Stack, IconButton, Typography,
-  Table, TableHead, TableBody, TableRow, TableCell, Paper, TableContainer
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
+  Stack,
+  IconButton,
+  Typography,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Paper,
+  TableContainer,
+  Tooltip,
+  Box
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
-import Swal from 'sweetalert2';
 import { getAll, create, update, remove } from '../services/VehiculoService';
 import type { Vehiculo } from '../types/vehiculo';
 
@@ -21,6 +36,8 @@ export const VehiculoCrud = () => {
   const [form, setForm] = useState<Omit<Vehiculo, 'id'>>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [toDeleteId, setToDeleteId] = useState<number | null>(null);
   const [alertState, setAlertState] = useState<AlertState | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof Vehiculo, string>>>({});
 
@@ -34,6 +51,8 @@ export const VehiculoCrud = () => {
   }, []);
 
   const handleOpen = (vehiculo?: Vehiculo) => {
+    setErrors({});
+    setAlertState(null);
     if (vehiculo) {
       setForm({ codigo: vehiculo.codigo, nombre: vehiculo.nombre });
       setEditingId(vehiculo.id);
@@ -41,15 +60,18 @@ export const VehiculoCrud = () => {
       setForm(emptyForm);
       setEditingId(null);
     }
-    setErrors({});
-    setAlertState(null);
     setOpen(true);
   };
 
+  // Solo cierra, reseteamos tras animación
   const handleClose = () => {
     setOpen(false);
+  };
+  const handleAfterClose = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setErrors({});
+    setAlertState(null);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,8 +85,20 @@ export const VehiculoCrud = () => {
     const newErrors: typeof errors = {};
     if (!form.codigo.trim()) newErrors.codigo = 'Campo obligatorio';
     if (!form.nombre.trim()) newErrors.nombre = 'Campo obligatorio';
+
+    const existeCodigo = vehiculos.some(v =>
+      v.codigo === form.codigo && (editingId === null || v.id !== editingId)
+    );
+    if (!newErrors.codigo && existeCodigo) {
+      newErrors.codigo = 'Ya existe un vehículo con ese código';
+    }
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      setAlertState({ message: 'Corrige los errores antes de continuar.', severity: 'error' });
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -72,16 +106,15 @@ export const VehiculoCrud = () => {
 
     try {
       let response;
-      if (editingId !== null) {
-        response = await update(editingId, form);
-      } else {
-        response = await create(form);
-      }
+      if (editingId !== null) response = await update(editingId, form);
+      else response = await create(form);
 
       if (response.data.success) {
         setAlertState({ message: 'Guardado correctamente', severity: 'success' });
-        handleClose();
-        loadData();
+        setTimeout(() => {
+          setOpen(false);
+          loadData();
+        }, 300);
       } else {
         setAlertState({ message: response.data.message, severity: 'error' });
       }
@@ -91,38 +124,43 @@ export const VehiculoCrud = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    const confirm = await Swal.fire({
-      title: '¿Eliminar vehículo?',
-      text: 'Esta acción no se puede deshacer',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-    });
+  const confirmDelete = (id: number) => {
+    setToDeleteId(id);
+    setDeleteOpen(true);
+  };
 
-    if (!confirm.isConfirmed) return;
-
+  const handleDelete = async () => {
+    if (toDeleteId === null) return;
     try {
-      const response = await remove(id);
+      const response = await remove(toDeleteId);
       if (response.data.success) {
-        await loadData();
-        Swal.fire('Eliminado', 'Vehículo eliminado correctamente', 'success');
+        setAlertState({ message: 'Vehículo eliminado correctamente', severity: 'success' });
+        loadData();
       } else {
-        Swal.fire('Error', response.data.message, 'error');
+        setAlertState({ message: response.data.message, severity: 'error' });
       }
     } catch (err) {
       console.error(err);
-      Swal.fire('Error', 'Error al eliminar el vehículo', 'error');
+      setAlertState({ message: 'Error al eliminar el vehículo', severity: 'error' });
+    } finally {
+      setDeleteOpen(false);
+      setToDeleteId(null);
     }
   };
 
   return (
     <Stack spacing={3}>
       <Typography variant="h5">Vehículos</Typography>
-      <Button variant="contained" startIcon={<Add />} onClick={() => handleOpen()}>
-        Nuevo Vehículo
-      </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => handleOpen()}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
+          Nuevo Vehículo
+        </Button>
+      </Box>
 
       <TableContainer component={Paper}>
         <Table>
@@ -139,22 +177,41 @@ export const VehiculoCrud = () => {
                 <TableCell align="center">{vehiculo.codigo}</TableCell>
                 <TableCell align="left">{vehiculo.nombre}</TableCell>
                 <TableCell align="center">
-                  <IconButton onClick={() => handleOpen(vehiculo)}><Edit /></IconButton>
-                  <IconButton onClick={() => handleDelete(vehiculo.id)}><Delete /></IconButton>
+                  <Tooltip title="Editar">
+                    <IconButton onClick={() => handleOpen(vehiculo)} aria-label="editar">
+                      <Edit />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Eliminar">
+                    <IconButton onClick={() => confirmDelete(vehiculo.id)} aria-label="eliminar">
+                      <Delete />
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
             {vehiculos.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} align="center">No hay vehículos registrados</TableCell>
+                <TableCell colSpan={3} align="center">
+                  No hay vehículos registrados
+                </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>{editingId ? 'Editar Vehículo' : 'Nuevo Vehículo'}</DialogTitle>
+      {/* Crear/Editar */}
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        fullWidth
+        maxWidth="sm"
+        TransitionProps={{ onExited: handleAfterClose }}
+      >
+        <DialogTitle>
+          {editingId ? 'Editar Vehículo' : 'Nuevo Vehículo'}
+        </DialogTitle>
         <DialogContent>
           {alertState && (
             <Alert severity={alertState.severity} sx={{ mb: 2 }}>
@@ -182,10 +239,27 @@ export const VehiculoCrud = () => {
             helperText={errors.nombre}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ justifyContent: 'space-between' }}>
           <Button onClick={handleClose}>Cancelar</Button>
           <Button variant="contained" onClick={handleSubmit}>
             {editingId ? 'Actualizar' : 'Crear'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Eliminar */}
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}>  
+        <DialogTitle>Eliminar Vehículo</DialogTitle>
+        <DialogContent>
+          <Typography>¿Estás seguro de que deseas eliminar este vehículo?</Typography>
+          <Typography color="error" sx={{ mt: 1 }}>
+            Esta acción no se puede deshacer.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'space-between' }}>
+          <Button onClick={() => setDeleteOpen(false)}>No, Conservar</Button>
+          <Button variant="contained" color="error" onClick={handleDelete}>
+            Sí, Eliminar
           </Button>
         </DialogActions>
       </Dialog>
