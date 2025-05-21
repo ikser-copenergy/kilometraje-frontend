@@ -11,7 +11,7 @@ export const getAll = (fechaInicio?: string, fechaFin?: string) => {
   return axios.get<ApiResponse<Kilometraje[]>>(API, { params });
 };
 export const getById = (id: number) => axios.get<ApiResponse<Kilometraje>>(`${API}/${id}`);
-export const create = (data: Omit<Kilometraje, 'id'>) => axios.post(API, data);
+export const create = (data: Omit<Kilometraje, 'id'|'vehiculo'>) => axios.post(API, data);
 export const update = (id: number, data: Omit<Kilometraje, 'id'>) => axios.put(`${API}/${id}`, data);
 export const remove = (id: number) => axios.delete(`${API}/${id}`);
 

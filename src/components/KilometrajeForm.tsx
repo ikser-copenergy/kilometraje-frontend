@@ -1,12 +1,14 @@
-import { useState } from 'react';
-import { TextField, Button, Stack, Alert } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { TextField, Button, Stack, Alert, MenuItem } from '@mui/material';
 import Swal from 'sweetalert2';
 import { create } from '../services/KilometrajeService';
+import { getAll } from '../services/VehiculoService';
+
 import dayjs from 'dayjs';
 import type { Kilometraje } from '../types/Kilometraje';
+import type { Vehiculo } from '../types/vehiculo';
 
-// Definimos un tipo con todo menos el ID, que es autogenerado
-type KilometrajeFormData = Omit<Kilometraje, 'id'>;
+type KilometrajeFormData = Omit<Kilometraje, 'id' | 'vehiculo'>;
 
 type AlertState = {
   message: string;
@@ -19,13 +21,25 @@ export const KilometrajeForm = () => {
     kilometraje_fin: 0,
     fecha: dayjs().format('YYYY-MM-DDTHH:mm:ss'),
     nombre_conductor: '',
-    vehiculo: '',
     motivo_uso: '',
-    id_vehiculo:0
+    id_vehiculo: 0,
   });
 
+  const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [errors, setErrors] = useState<Partial<Record<keyof KilometrajeFormData, string>>>({});
   const [alertState, setAlertState] = useState<AlertState | null>(null);
+
+  useEffect(() => {
+    getAll()
+      .then(res => {
+        if (res.data.success && res.data.data) {
+          setVehiculos(res.data.data);
+        }
+      })
+      .catch(error => {
+        console.error('Error cargando vehículos', error);
+      });
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -35,6 +49,9 @@ export const KilometrajeForm = () => {
       const intVal = cleaned === '' ? 0 : parseInt(cleaned, 10);
       setForm(prev => ({ ...prev, [name]: intVal }));
       setErrors(prev => ({ ...prev, [name]: undefined }));
+    } else if (name === 'id_vehiculo') {
+      setForm(prev => ({ ...prev, id_vehiculo: parseInt(value, 10) }));
+      setErrors(prev => ({ ...prev, id_vehiculo: undefined }));
     } else {
       setForm(prev => ({ ...prev, [name]: value }));
       setErrors(prev => ({ ...prev, [name]: undefined }));
@@ -93,7 +110,6 @@ export const KilometrajeForm = () => {
           kilometraje_fin: 0,
           fecha: dayjs().format('YYYY-MM-DDTHH:mm:ss'),
           nombre_conductor: '',
-          vehiculo: '',
           motivo_uso: '',
           id_vehiculo: 0
         });
@@ -151,13 +167,20 @@ export const KilometrajeForm = () => {
         helperText={errors.nombre_conductor}
       />
       <TextField
+        select
         label="Vehículo"
-        name="vehiculo"
-        value={form.vehiculo}
+        name="id_vehiculo"
+        value={form.id_vehiculo === 0 ? '' : form.id_vehiculo}
         onChange={handleChange}
-        error={Boolean(errors.vehiculo)}
-        helperText={errors.vehiculo}
-      />
+        error={Boolean(errors.id_vehiculo)}
+        helperText={errors.id_vehiculo}
+      >
+        {vehiculos.map(vehiculo => (
+          <MenuItem key={vehiculo.id} value={vehiculo.id}>
+            {vehiculo.codigo} - {vehiculo.nombre}
+          </MenuItem>
+        ))}
+      </TextField>
       <TextField
         label="Motivo de Uso"
         name="motivo_uso"

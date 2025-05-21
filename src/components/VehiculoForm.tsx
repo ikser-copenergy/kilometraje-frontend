@@ -128,18 +128,16 @@ export const VehiculoCrud = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell align="center"><strong>ID</strong></TableCell>
               <TableCell align="center"><strong>Código</strong></TableCell>
-              <TableCell align="center"><strong>Nombre</strong></TableCell>
+              <TableCell align="left"><strong>Nombre</strong></TableCell>
               <TableCell align="center"><strong>Acciones</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {vehiculos.map((vehiculo) => (
               <TableRow key={vehiculo.id}>
-                <TableCell align="center">{vehiculo.id}</TableCell>
                 <TableCell align="center">{vehiculo.codigo}</TableCell>
-                <TableCell align="center">{vehiculo.nombre}</TableCell>
+                <TableCell align="left">{vehiculo.nombre}</TableCell>
                 <TableCell align="center">
                   <IconButton onClick={() => handleOpen(vehiculo)}><Edit /></IconButton>
                   <IconButton onClick={() => handleDelete(vehiculo.id)}><Delete /></IconButton>
