@@ -9,9 +9,20 @@ export const exportToExcel = async (fechaInicio: string, fechaFin: string) => {
     const res = await getAll(fechaInicio, fechaFin);
     const data: Kilometraje[] = res.data.data;
 
+    // Si no hay datos, no generar ni descargar Excel
+    if (!data || data.length === 0) {
+      console.info('No hay registros de kilometraje entre las fechas proporcionadas.');
+      return;
+    }
+
     // Crear nuevo workbook y worksheet
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Kilometraje');
+
+    // Ajustar altura de filas 1, 2 y 3 al doble
+    [1, 2, 3].forEach((i) => {
+      worksheet.getRow(i).height = 30;
+    });
 
     // Cargar logo desde carpeta public
     const logoResponse = await fetch('/arrayan-logo.jpg');
@@ -21,14 +32,15 @@ export const exportToExcel = async (fechaInicio: string, fechaFin: string) => {
     // 1. Título "CONTROL DE KILOMETRAJES" fusionado A1:H3
     worksheet.mergeCells('A1:H3');
     const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'CONTROL DE KILOMETRAJES';
-    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    titleCell.font = { bold: true, size: 16 };
+    titleCell.value = 'CORPORACIÓN ARRAYAN S. DE R.L.\nCONTROL DE KILOMETRAJES';
+    titleCell.value = 'CORPORACIÓN ARRAYAN S. DE R.L.\nCONTROL DE KILOMETRAJES';
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    titleCell.font = { bold: true, size: 13 };
 
-    // Insertar imagen cuadrada 50x50 en área A1:H3, extremo derecho
+    // Insertar imagen cuadrada 70x70 en área A1:H3, extremo derecho
     worksheet.addImage(imageId, {
       tl: { col: 7.2, row: 0.5 },
-      ext: { width: 70, height: 70 }
+      ext: { width: 100, height: 100 }
     });
 
     // 2. Fila 4 en blanco
@@ -37,8 +49,8 @@ export const exportToExcel = async (fechaInicio: string, fechaFin: string) => {
     // 3. "DATOS GENERALES" fusionado A5:H5
     worksheet.mergeCells('A5:H5');
     const datosCell = worksheet.getCell('A5');
-    datosCell.value = 'DATOS GENERALES';
-    datosCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    datosCell.value = 'Datos Generales';
+    datosCell.alignment = { horizontal: 'left', vertical: 'middle' };
     datosCell.font = { bold: true, size: 12 };
 
     // 4. Fila 6 en blanco
@@ -100,11 +112,25 @@ export const exportToExcel = async (fechaInicio: string, fechaFin: string) => {
         const val = cell.value ? cell.value.toString() : '';
         maxLength = Math.max(maxLength, val.length);
       });
-      // Mayor expansión para la columna 8 (Motivo)
-      column.width = col === 8 ? maxLength + 10 : maxLength + 2;
+      column.width = maxLength + 2;
     }
 
-    // 8. Generar buffer y descargar
+    // 8. Ajuste manual de ancho personalizado
+    const customWidths: { [key: number]: number } = {
+      1: 20,
+      2: 20,
+      3: 20,
+      4: 20,
+      5: 20,
+      6: 30,
+      7: 30,
+      8: 60,
+    };
+    Object.entries(customWidths).forEach(([col, width]) => {
+      worksheet.getColumn(Number(col)).width = width;
+    });
+
+    // 9. Generar buffer y descargar
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/octet-stream' });
     saveAs(blob, `kilometraje_${fechaInicio}_a_${fechaFin}.xlsx`);
