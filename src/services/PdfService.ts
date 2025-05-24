@@ -74,7 +74,7 @@ export const exportToExcel = async (fechaInicio: string, fechaFin: string) => {
     });
 
     // 6. Datos a partir de la fila 8
-    data.forEach(rowData => {
+    data.reverse().forEach(rowData => {
       const fecha = new Date(rowData.fecha);
       const day = String(fecha.getDate()).padStart(2, '0');
       const month = String(fecha.getMonth() + 1).padStart(2, '0');
