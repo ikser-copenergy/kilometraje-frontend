@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Vehiculo } from '../types/vehiculo';
+import type { Vehiculo } from '../types/Vehiculo';
 import type { ApiResponse } from '../types/apiResponse';
 
 const API_URL = import.meta.env.VITE_API_URL;

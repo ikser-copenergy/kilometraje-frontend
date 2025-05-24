@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Kilometraje } from '../types/Kilometraje';
 import { getAll } from '../services/KilometrajeService';
+import { Edit } from '@mui/icons-material';
+import { IconButton } from '@mui/material';
+import { EditKilometrajeModal } from './editKilometrajeModal';
 import DownloadIcon from '@mui/icons-material/Download';
 import {
   Table,
@@ -22,8 +25,10 @@ import {
 import dayjs from 'dayjs';
 import { exportToExcel } from '../services/PdfService';
 
+
 export const KilometrajeTable = () => {
   const [data, setData] = useState<Kilometraje[]>([]);
+  const [editing, setEditing] = useState<Kilometraje | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -141,6 +146,7 @@ export const KilometrajeTable = () => {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell>Acciones</TableCell>
                 <TableCell>Inicio</TableCell>
                 <TableCell>Fin</TableCell>
                 <TableCell>Recorrido</TableCell>
@@ -153,6 +159,14 @@ export const KilometrajeTable = () => {
             <TableBody>
               {data.map(row => (
                 <TableRow key={row.id}>
+                  <TableCell>
+                    <IconButton
+                      size="small"
+                      onClick={() => setEditing(row)}
+                    >
+                      <Edit fontSize="small" />
+                  </IconButton>
+                 </TableCell>
                   <TableCell>{row.kilometraje_inicio}</TableCell>
                   <TableCell>{row.kilometraje_fin}</TableCell>
                   <TableCell>
@@ -170,6 +184,20 @@ export const KilometrajeTable = () => {
           </Table>
         </TableContainer>
       )}
+      {/* Modal de edición */}
+     {editing && (
+       <EditKilometrajeModal
+         open={!!editing}
+         initialData={editing}
+         onClose={() => setEditing(null)}
+         onUpdated={() => {
+          fetchData(fechaInicio,fechaFin);
+          setTimeout(() => {
+            setEditing(null);
+          }, 200);
+         }}
+       />
+     )}
     </Paper>
   );
 };

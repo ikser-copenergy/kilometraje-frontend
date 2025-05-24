@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { Add, Edit, Delete } from '@mui/icons-material';
 import { getAll, create, update, remove } from '../services/VehiculoService';
-import type { Vehiculo } from '../types/vehiculo';
+import type { Vehiculo } from '../types/Vehiculo';
 
 type AlertState = {
   message: string;

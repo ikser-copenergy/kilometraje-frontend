@@ -6,7 +6,7 @@ import { getAll } from '../services/VehiculoService';
 
 import dayjs from 'dayjs';
 import type { Kilometraje } from '../types/Kilometraje';
-import type { Vehiculo } from '../types/vehiculo';
+import type { Vehiculo } from '../types/Vehiculo';
 
 type KilometrajeFormData = Omit<Kilometraje, 'id' | 'vehiculo'>;
 
