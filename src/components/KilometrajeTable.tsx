@@ -3,7 +3,7 @@ import type { Kilometraje } from '../types/Kilometraje';
 import { getAll } from '../services/KilometrajeService';
 import { Edit } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
-import { EditKilometrajeModal } from './editKilometrajeModal';
+import { EditKilometrajeModal } from './EditKilometrajeModal';
 import DownloadIcon from '@mui/icons-material/Download';
 import {
   Paper,
